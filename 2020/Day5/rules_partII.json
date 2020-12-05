@@ -1,0 +1,50 @@
+{
+    "byr":{ 
+		"mandatory":"true",
+		"rule": "min_max",
+		"min":1920,
+		"max":2002
+		},
+    "iyr": { 
+		"mandatory":"true",
+		"rule": "min_max",
+		"min":2010,
+		"max":2020
+		},
+    "eyr": { 
+		"mandatory":"true",
+		"rule": "min_max",
+		"min":2020,
+		"max":2030
+		},
+    "hgt": { 
+		"mandatory":"true",
+		"rule": "min_max2",
+		"cm":{
+			"min":150,
+			"max":193
+			},
+		"in":{
+			"min":59,
+			"max":76
+			}
+		},
+    "hcl": { 
+		"mandatory":"true",
+		"rule":"hex",
+		"size":6
+		},
+    "ecl": { 
+		"mandatory":"true",
+		"rule":"list",
+		"list":["amb","blu","brn","gry","grn","hzl","oth"]
+		},
+    "pid": { 
+		"mandatory":"true",
+		"rule":"numbers",
+		"size":9
+		},
+    "cid": { 
+		"mandatory":"false"
+		}
+}
