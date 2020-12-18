@@ -1,6 +1,5 @@
 INPUT_FILE = "2020/Day10/inputdata"
-START_ACC = 0
-MAX_REPEAT = 1
+SWAP_COUNTER = 1
 
 def load_data(filename):
     try:
@@ -10,115 +9,85 @@ def load_data(filename):
         print("exception on file read")
         return []
 
-def valid_position(position_map, position):
-    if not position in position_map:
-        return True
+def map_to_int(str_jolt_list):
+    return list(map(int, str_jolt_list))
 
-    if position_map[position] >= MAX_REPEAT:
-        return False
-    else:
-        return True
+def count():
+    global SWAP_COUNTER
+    SWAP_COUNTER = SWAP_COUNTER+1
+    return SWAP_COUNTER-1
 
-def annotate_position(position_map, position):
-    if position in position_map:
-        position_map[position] = position_map[position]+1
-    else:
-        position_map[position] = 1
-    return position_map
 
-def get_swap_list(instruction_list):
-    swap_list = [-1]
-    for index, instruction in enumerate(instruction_list):
-        if instruction.startswith("jmp") or instruction.startswith("nop"):
-            swap_list.append(index)
-    return swap_list
+def analyze(value_list):
+    step1_counter = 0
+    step2_counter = 0
+    step3_counter = 0
 
-def flip_instruction(instruction_list, position):
-    if position==-1:
-        return instruction_list
+    print(f"Input list {value_list}")
 
-    print(f"Review applied on {position}, old list: {instruction_list}")
-    if instruction_list[position].startswith("jmp"):
-        #print(f"it was {instruction_list[position]}")
-        instruction_list[position]=instruction_list[position].replace("jmp", "nop")
-        #print(f"not it's {instruction_list[position]}")
+    for index, value in enumerate(value_list):
+        previous = value_list[index-1]
+        if (index<=0):
+            pass
+        else:
+            step = value-previous
+            print(f"Values {previous} and {value} are on step {step}")
+            if step==1:
+                step1_counter = step1_counter+1
+            elif step==2:
+                step2_counter = step2_counter+1
+            elif step==3:
+                step3_counter = step3_counter+1
+            else:
+                pass
 
-    elif instruction_list[position].startswith("nop"):
-        #print(f"it was {instruction_list[position]}")
-        instruction_list[position]=instruction_list[position].replace("nop", "jmp")
-        #print(f"not it's {instruction_list[position]}")
+    return step1_counter, step3_counter
 
-    print(f"Flip applied in postion {position}, new list: {instruction_list}")
-    return instruction_list
-    
-def evaluate(instruction, position, position_map):
-    aux = instruction.split(' ')
-    operation = aux[0].strip()
-    argument = aux[1].strip()
-    value_ret = 0
-    jump_step = 0
+def count_non_mandatory_values(value_list, offset, deleted_items, depth):
 
-    if valid_position(position_map, position):
-        position_map = annotate_position(position_map, position)
-    else:
-        return 0, 0, position_map, True
+    #print(f"Input list {value_list}")
 
-    if operation=="nop":
-        jump_step=1
-        value_ret=0
-        #print(f" {jump_step}  {value_ret} NOP operation")
-    elif operation=="acc":
-        jump_step=1
-        value_ret=int(argument)
-        #print(f" {jump_step}  {value_ret} ACC operation")
-    elif operation=="jmp":
-        jump_step=int(argument)
-        value_ret=0
-        #print(f" {jump_step}  {value_ret} JMP operation")
-    else:
-        jump_step=1
-        value_ret=0
-        #print(f" ?  ? Unkown operation found!")
+    for index, value in enumerate(value_list):
+        if (depth==0):
+            print(f"Main iterator, progress {index}/{len(value_list)}")
+            deleted_items=[]
 
-    #ret value modificator, jump step, position map
-    return value_ret, jump_step, position_map, False
+        if (index<=0 or index>=len(value_list)-1):
+            #print(f"Skipped index {index}, list lenght is {len(value_list)}")
+            pass
+        else:
+            previous_item = value_list[index-1]
+            next_item = value_list[index+1]
+            gap = next_item - previous_item
+            try:
+                last_deleted = deleted_items[-1:][0]
+            except:
+                last_deleted=0
 
-def scan_instruction_list(instruction_list):
-    value = START_ACC
-    position_map = {}
+            if gap<=3 and value not in deleted_items and value>last_deleted:
+                copy_list = value_list[:]
+                copy_list.remove(value)
+                val = count()
+                deleted_items.append(value)
+                #print(f"+ Deleted: {deleted_items} @ {depth} to DELETE -----> {value}, counter {val}")
+                count_non_mandatory_values(copy_list, index, deleted_items, depth+1)
+                deleted_items.remove(value)
+            else:
+                #print(f"- Values {previous_item} and {next_item} are on step {gap}, that's too much")
+                #count()
+                pass
 
-    i = 0
+    #print(f"{value_list}")
 
-    while i < len(instruction_list):
-        print(f"Will evaluate position {i} -> {instruction_list[i]}")
-        value_modif, jump_step, position_map, stop = evaluate(instruction_list[i], i, position_map)
-        value = value + value_modif
-
-        if stop is True:
-            break
-
-        i=i + jump_step
-    return value, stop
+def setup_add_custom_adapter(value_list):
+    value_list.append(0)
+    value_list.append(max(value_list)+3)
+    return sorted(value_list)
 
 def main():
-    orig_instruction_list = load_data(INPUT_FILE)
-    swap_list = get_swap_list(orig_instruction_list)
-
-    for swap_attempt in swap_list:
-        orig_instruction_list = load_data(INPUT_FILE)
-        print(f"Original list {orig_instruction_list}")
-        instruction_list = flip_instruction(orig_instruction_list, swap_attempt)
-        print(f"Will try with instruction list {instruction_list}")
-        cnt, stop = scan_instruction_list(instruction_list)
-
-        if stop==False:
-            print(f"FOUND valid solution by swapping position {swap_attempt}, so it's {instruction_list}")
-            break
-        else:
-            print(f"Invalid solution found when swapping on position {swap_attempt} for {instruction_list} will retry...")
-
-    print(f"Calculated accumulator is {cnt}, stop value is {stop}")
-
+    int_jolt_list = map_to_int( load_data(INPUT_FILE) )
+    res = count_non_mandatory_values(setup_add_custom_adapter(int_jolt_list), 0, [], 0)
+    print(f"Counter: {SWAP_COUNTER}")
 if __name__ == "__main__":
     main()
 
